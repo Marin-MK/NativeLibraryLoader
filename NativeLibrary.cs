@@ -14,11 +14,11 @@ public class NativeLibrary
     /// <summary>
     /// The filename of the library.
     /// </summary>
-    public string Name;
+    public string LibraryName;
     /// <summary>
     /// The pointer to the library handle.
     /// </summary>
-    public IntPtr Handle;
+    public IntPtr LibraryHandle;
 
     // Windows
     [DllImport("kernel32")]
@@ -67,15 +67,15 @@ public class NativeLibrary
     {
         foreach (string PreloadLibrary in PreloadLibraries)
         {
-            if (LoadedLibraries.Find(l => l.Name == PreloadLibrary) != null) continue;
+            if (LoadedLibraries.Find(l => l.LibraryName == PreloadLibrary) != null) continue;
             LoadedLibraries.Add(new NativeLibrary(PreloadLibrary));
         }
-        Name = Library;
-        if (Platform == Platform.Windows) Handle = LoadLibrary(Library);
-        else if (Platform == Platform.Linux) Handle = dlopen(Library, 0x102);
+        LibraryName = Library;
+        if (Platform == Platform.Windows) LibraryHandle = LoadLibrary(Library);
+        else if (Platform == Platform.Linux) LibraryHandle = dlopen(Library, 0x102);
         else if (Platform == Platform.MacOS) throw new UnsupportedPlatformException();
         else throw new UnsupportedPlatformException();
-        if (Handle == IntPtr.Zero) throw new LibraryLoadException(Library);
+        if (LibraryHandle == IntPtr.Zero) throw new LibraryLoadException(Library);
         LoadedLibraries.Add(this);
     }
 
@@ -88,11 +88,11 @@ public class NativeLibrary
     public TDelegate GetFunction<TDelegate>(string FunctionName)
     {
         IntPtr funcaddr = IntPtr.Zero;
-        if (Platform == Platform.Windows) funcaddr = GetProcAddress(Handle, FunctionName);
-        else if (Platform == Platform.Linux) funcaddr = dlsym(Handle, FunctionName);
+        if (Platform == Platform.Windows) funcaddr = GetProcAddress(LibraryHandle, FunctionName);
+        else if (Platform == Platform.Linux) funcaddr = dlsym(LibraryHandle, FunctionName);
         else if (Platform == Platform.MacOS) throw new UnsupportedPlatformException();
         else throw new UnsupportedPlatformException();
-        if (funcaddr == IntPtr.Zero) throw new InvalidEntryPointException(Name, FunctionName);
+        if (funcaddr == IntPtr.Zero) throw new InvalidEntryPointException(LibraryName, FunctionName);
         return Marshal.GetDelegateForFunctionPointer<TDelegate>(funcaddr);
     }
     
