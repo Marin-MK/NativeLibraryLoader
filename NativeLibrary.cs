@@ -95,7 +95,22 @@ public class NativeLibrary
         if (funcaddr == IntPtr.Zero) throw new InvalidEntryPointException(LibraryName, FunctionName);
         return Marshal.GetDelegateForFunctionPointer<TDelegate>(funcaddr);
     }
-    
+
+    /// <summary>
+    /// Returns whether the given function exists in the library.
+    /// </summary>
+    /// <param name="FunctionName">The name of the target function.</param>
+    /// <returns>Whether the method exists.</returns>
+    public bool HasFunction(string FunctionName)
+    {
+        IntPtr funcaddr = IntPtr.Zero;
+        if (Platform == Platform.Windows) funcaddr = GetProcAddress(LibraryHandle, FunctionName);
+        else if (Platform == Platform.Linux) funcaddr = dlsym(LibraryHandle, FunctionName);
+        else if (Platform == Platform.MacOS) throw new UnsupportedPlatformException();
+        else throw new UnsupportedPlatformException();
+        return funcaddr != IntPtr.Zero;
+    }
+
     /// <summary>
     /// Represents an error with binding to a native function.
     /// </summary>
