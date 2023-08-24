@@ -28,8 +28,8 @@ jobs:
       uses: svenstaro/upload-release-action@2.7.0
       with:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
-        file: target/release/native-library-loader
-        asset_name: native-library-loader
+        file: bin/debug/net7.0/NativeLibraryLoader.dll
+        asset_name: native-library-loader.dll
         tag: ${{ github.ref }}
         overwrite: true
         body: "Automatically generated GitHub Actions build."
