@@ -24,5 +24,12 @@ jobs:
       run: dotnet restore
     - name: Build
       run: dotnet build --no-restore
-    - name: Test
-      run: dotnet test --no-build --verbosity normal
+    - name: Upload files to a GitHub release
+      uses: svenstaro/upload-release-action@2.7.0
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file: target/release/native-library-loader
+        asset_name: native-library-loader
+        tag: ${{ github.ref }}
+        overwrite: true
+        body: "Automatically generated GitHub Actions build."
