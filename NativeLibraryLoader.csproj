@@ -1,11 +1,21 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net7.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-    <Platforms>x64</Platforms>
-    <Configurations>Debug;Release</Configurations>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>net7.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<Platforms>x64</Platforms>
+		<Configurations>Debug;Release</Configurations>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)'=='Debug'">
+		<Optimize>False</Optimize>
+		<OutputPath>build/Debug</OutputPath>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)'=='Release'">
+		<Optimize>True</Optimize>
+		<OutputPath>build/Release</OutputPath>
+	</PropertyGroup>
 
 </Project>
