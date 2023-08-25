@@ -26,10 +26,10 @@ public class NativeLibrary
     internal static extern IntPtr GetProcAddress(IntPtr Handle, string FunctionName);
 
     // Linux
-    [DllImport("libdl.so")]
+    [DllImport("libdl.so.2")]
     internal static extern IntPtr dlopen(string filename, int flags);
 
-    [DllImport("libdl.so")]
+    [DllImport("libdl.so.2")]
     internal static extern IntPtr dlsym(IntPtr Handle, string FunctionName);
 
     public static Platform? _platform;
