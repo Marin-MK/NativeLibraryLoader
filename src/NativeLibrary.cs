@@ -16,21 +16,28 @@ public class NativeLibrary
     /// <summary>
     /// The pointer to the library handle.
     /// </summary>
-    public IntPtr LibraryHandle;
+    public nint LibraryHandle;
 
     // Windows
     [DllImport("kernel32")]
-    internal static extern IntPtr LoadLibrary(string Filename);
+    internal static extern nint LoadLibrary(string filename);
 
     [DllImport("kernel32")]
-    internal static extern IntPtr GetProcAddress(IntPtr Handle, string FunctionName);
+    internal static extern nint GetProcAddress(nint handle, string functionName);
 
     // Linux
-    [DllImport("libdl.so.2")]
-    internal static extern IntPtr dlopen(string filename, int flags);
+    [DllImport("libdl.so.2", EntryPoint = "dlopen")]
+    internal static extern nint l_dlOpen(string filename, int flags);
 
-    [DllImport("libdl.so.2")]
-    internal static extern IntPtr dlsym(IntPtr Handle, string FunctionName);
+    [DllImport("libdl.so.2", EntryPoint = "dlsym")]
+    internal static extern nint l_dlsym(nint handle, string functionName);
+
+    // MacOS
+    [DllImport("libdl.dylib", EntryPoint = "dlopen")]
+    internal static extern nint m_dlopen(string filename, int flags);
+
+    [DllImport("libdl.dylib", EntryPoint = "dlsym")]
+    internal static extern nint m_dlsym(nint handle, string functionName);
 
     public static Platform? _platform;
     public static Platform Platform
@@ -59,21 +66,21 @@ public class NativeLibrary
     /// <summary>
     /// Opens the specified library.
     /// </summary>
-    /// <param name="Library">The filename to the library to load.</param>
-    /// <param name="PreloadLibraries">A list of any other libraries that must be loaded before loading this library.</param>
-    protected NativeLibrary(string Library, params string[] PreloadLibraries)
+    /// <param name="library">The filename to the library to load.</param>
+    /// <param name="preloadLibraries">A list of any other libraries that must be loaded before loading this library.</param>
+    protected NativeLibrary(string library, params string[] preloadLibraries)
     {
-        foreach (string PreloadLibrary in PreloadLibraries)
+        foreach (string PreloadLibrary in preloadLibraries)
         {
             if (LoadedLibraries.Find(l => l.LibraryName == PreloadLibrary) != null) continue;
             LoadedLibraries.Add(new NativeLibrary(PreloadLibrary));
         }
-        LibraryName = Library;
-        if (Platform == Platform.Windows) LibraryHandle = LoadLibrary(Library);
-        else if (Platform == Platform.Linux) LibraryHandle = dlopen(Library, 0x102);
-        else if (Platform == Platform.MacOS) throw new UnsupportedPlatformException();
+        LibraryName = library;
+        if (Platform == Platform.Windows) LibraryHandle = LoadLibrary(library);
+        else if (Platform == Platform.Linux) LibraryHandle = l_dlOpen(library, 0x102);
+        else if (Platform == Platform.MacOS) LibraryHandle = m_dlopen(library, 0x102);
         else throw new UnsupportedPlatformException();
-        if (LibraryHandle == IntPtr.Zero) throw new LibraryLoadException(Library);
+        if (LibraryHandle == IntPtr.Zero) throw new LibraryLoadException(library);
         LoadedLibraries.Add(this);
     }
 
@@ -83,27 +90,27 @@ public class NativeLibrary
     /// <typeparam name="TDelegate">The delegate to bind the target method with.</typeparam>
     /// <param name="FunctionName">The name of the target function.</param>
     /// <returns>A delegate bound to the target method.</returns>
-    public TDelegate GetFunction<TDelegate>(string FunctionName)
+    public TDelegate GetFunction<TDelegate>(string functionName)
     {
         IntPtr funcaddr = IntPtr.Zero;
-        if (Platform == Platform.Windows) funcaddr = GetProcAddress(LibraryHandle, FunctionName);
-        else if (Platform == Platform.Linux) funcaddr = dlsym(LibraryHandle, FunctionName);
-        else if (Platform == Platform.MacOS) throw new UnsupportedPlatformException();
+        if (Platform == Platform.Windows) funcaddr = GetProcAddress(LibraryHandle, functionName);
+        else if (Platform == Platform.Linux) funcaddr = l_dlsym(LibraryHandle, functionName);
+        else if (Platform == Platform.MacOS) funcaddr = m_dlsym(LibraryHandle, functionName);
         else throw new UnsupportedPlatformException();
-        if (funcaddr == IntPtr.Zero) throw new InvalidEntryPointException(LibraryName, FunctionName);
+        if (funcaddr == IntPtr.Zero) throw new InvalidEntryPointException(LibraryName, functionName);
         return Marshal.GetDelegateForFunctionPointer<TDelegate>(funcaddr);
     }
 
     /// <summary>
     /// Returns whether the given function exists in the library.
     /// </summary>
-    /// <param name="FunctionName">The name of the target function.</param>
+    /// <param name="functionName">The name of the target function.</param>
     /// <returns>Whether the method exists.</returns>
-    public bool HasFunction(string FunctionName)
+    public bool HasFunction(string functionName)
     {
         IntPtr funcaddr = IntPtr.Zero;
-        if (Platform == Platform.Windows) funcaddr = GetProcAddress(LibraryHandle, FunctionName);
-        else if (Platform == Platform.Linux) funcaddr = dlsym(LibraryHandle, FunctionName);
+        if (Platform == Platform.Windows) funcaddr = GetProcAddress(LibraryHandle, functionName);
+        else if (Platform == Platform.Linux) funcaddr = l_dlsym(LibraryHandle, functionName);
         else if (Platform == Platform.MacOS) throw new UnsupportedPlatformException();
         else throw new UnsupportedPlatformException();
         return funcaddr != IntPtr.Zero;
@@ -114,7 +121,7 @@ public class NativeLibrary
     /// </summary>
     public class InvalidEntryPointException : Exception
     {
-        public InvalidEntryPointException(string Library, string FunctionName) : base($"No entry point by the name of '{FunctionName}' could be found in '{Library}'.") { }
+        public InvalidEntryPointException(string library, string functionName) : base($"No entry point by the name of '{functionName}' could be found in '{library}'.") { }
     }
 
     /// <summary>
@@ -130,7 +137,7 @@ public class NativeLibrary
     /// </summary>
     public class LibraryLoadException : Exception
     {
-        public LibraryLoadException(string Library) : base($"Failed to load library '{Library}'") { }
+        public LibraryLoadException(string library) : base($"Failed to load library '{library}'") { }
     }
 }
 
