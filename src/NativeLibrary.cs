@@ -57,10 +57,11 @@ public class NativeLibrary
     /// Opens the specified library.
     /// </summary>
     /// <param name="Library">The filename to the library to load.</param>
-    /// <param name="PreloadLibraries">A list of any other libraries that must be loaded before loading this library.</param>
-    public static NativeLibrary Load(string Library, params string[] PreloadLibraries)
+    public static NativeLibrary Load(string Library)
     {
-        return new NativeLibrary(Library, PreloadLibraries);
+        NativeLibrary? lib = LoadedLibraries.Find(l => l.LibraryName == Library);
+        if (lib is not null) return lib;
+        return new NativeLibrary(Library);
     }
 
     /// <summary>
@@ -68,13 +69,8 @@ public class NativeLibrary
     /// </summary>
     /// <param name="library">The filename to the library to load.</param>
     /// <param name="preloadLibraries">A list of any other libraries that must be loaded before loading this library.</param>
-    protected NativeLibrary(string library, params string[] preloadLibraries)
+    protected NativeLibrary(string library)
     {
-        foreach (string PreloadLibrary in preloadLibraries)
-        {
-            if (LoadedLibraries.Find(l => l.LibraryName == PreloadLibrary) != null) continue;
-            LoadedLibraries.Add(new NativeLibrary(PreloadLibrary));
-        }
         LibraryName = library;
         if (Platform == Platform.Windows) LibraryHandle = LoadLibrary(library);
         else if (Platform == Platform.Linux) LibraryHandle = l_dlOpen(library, 0x102);
